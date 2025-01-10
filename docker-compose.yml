@@ -1,0 +1,12 @@
+services:
+  node:
+    image: node:23.5.0-bullseye-slim
+    container_name: kebabovnic-web
+    working_dir: /kebabovnic-web
+    volumes:
+      - .:/kebabovnic-web
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    tty: true
+    command: bash -c "npm install && npm start"

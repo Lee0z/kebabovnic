@@ -1,0 +1,35 @@
+@import './base.css';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+#app {
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+button,
+.button-link {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  a:hover,
+  button:hover,
+  .button-link:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
