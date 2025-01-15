@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" @click.self="closeModal">
     <div class="bg-emerald-950 p-8 rounded-lg shadow-lg w-full max-w-md">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-bold text-white">{{ isLogin ? 'Login' : 'Register' }}</h2>
@@ -145,7 +145,17 @@ const handleSubmit = async () => {
         toast.error(errorMessage);
         throw new Error(errorMessage);
       }
+      const data = await response.json();
+      const token = data.token;
+      cookies.set('auth_token', token, { secure: true, sameSite: 'strict' });
       toast.success('Registration successful');
+      const userInfoResponse = await fetch(`${import.meta.env.VITE_API_URL}/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const userInfo = await userInfoResponse.json();
+      emit('update-username', userInfo.name);
     } catch (error) {
       console.error('Registration failed', error);
     }
