@@ -1,13 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { get } from '@/utils/api';
+import KebabPlace from '@/models/KebabPlaceModel';
+import KebabPlaceList from '@/components/KebabPlaceList.vue';
 
 const searchResults = ref([]);
 
 const fetchSearchResults = async () => {
   try {
-    const data = await get('/search', { query: 'kebab' }); // Adjust the endpoint and parameters as needed
-    searchResults.value = data.results;
+    const data = await get('/kebab-places');
+    searchResults.value = data.data.map(place => new KebabPlace(place));
   } catch (error) {
     console.error('Error fetching search results:', error);
   }
@@ -19,10 +21,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <h1 class="text-4xl font-bold text-center my-8">Search Results</h1>
-    <ul>
-      <li v-for="result in searchResults" :key="result.id">{{ result.name }}</li>
-    </ul>
+  <div class="kebab-list flex flex-col items-center w-full max-w-4xl mx-auto">
+    <KebabPlaceList :kebabPlaces="searchResults" />
   </div>
 </template>
+
+<style scoped>
+.kebab-list {
+  margin-top: 10rem;
+}
+</style>

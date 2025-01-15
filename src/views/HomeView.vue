@@ -2,17 +2,31 @@
 import { onMounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { get } from '@/utils/api'
+import KebabPlace from '@/models/KebabPlaceModel'
 
-onMounted(() => {
+onMounted(async () => {
   const map = L.map('map').setView([51.207, 16.161], 13)
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map)
 
+  try {
+    const response = await get('/kebab-places')
+    const kebabPlaces = response.data.map(place => new KebabPlace(place))
+
+    kebabPlaces.forEach(kebabPlace => {
+      const { latitude, longitude } = kebabPlace.getCoordinates()
+      L.marker([latitude, longitude]).addTo(map)
+        .bindPopup(`<b>${kebabPlace.name}</b><br>${kebabPlace.address}`)
+    })
+  } catch (error) {
+    console.error('Error fetching kebab places:', error)
+  }
+
   window.addEventListener('resize', () => {
     map.invalidateSize()
-
   })
 })
 </script>
