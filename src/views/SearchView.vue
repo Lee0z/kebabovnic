@@ -19,8 +19,8 @@ const fetchSearchResults = async () => {
 onMounted(() => {
   fetchSearchResults();
 
-  echo.channel('kebab-places')
-    .listen('kebab-place-created', (event) => {
+  echo.channel('kebab-places-created')
+    .listen('KebabPlaceCreated', (event) => {
       const kebabPlace = new KebabPlace(event.kebabPlace);
       searchResults.value.push(kebabPlace);
     });
