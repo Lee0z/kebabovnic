@@ -4,6 +4,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { get } from '@/utils/api'
 import KebabPlace from '@/models/KebabPlaceModel'
+import echo from '@/utils/echo'
+
 
 onMounted(async () => {
   const map = L.map('map').setView([51.207, 16.161], 13)
@@ -12,18 +14,28 @@ onMounted(async () => {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map)
 
+  const addKebabPlaceToMap = (kebabPlace) => {
+    const { latitude, longitude } = kebabPlace.getCoordinates()
+    L.marker([latitude, longitude],).addTo(map)
+      .bindPopup(`<b>${kebabPlace.name}</b><br>${kebabPlace.address}`)
+  }
+
   try {
     const response = await get('/kebab-places')
     const kebabPlaces = response.data.map(place => new KebabPlace(place))
 
     kebabPlaces.forEach(kebabPlace => {
-      const { latitude, longitude } = kebabPlace.getCoordinates()
-      L.marker([latitude, longitude]).addTo(map)
-        .bindPopup(`<b>${kebabPlace.name}</b><br>${kebabPlace.address}`)
+      addKebabPlaceToMap(kebabPlace)
     })
   } catch (error) {
     console.error('Error fetching kebab places:', error)
   }
+
+  echo.channel('kebab-place-created')
+    .listen('KebabPlaceCreated', (event) => {
+      const kebabPlace = new KebabPlace(event.kebabPlace)
+      addKebabPlaceToMap(kebabPlace)
+    })
 
   window.addEventListener('resize', () => {
     map.invalidateSize()
@@ -41,6 +53,7 @@ onMounted(async () => {
 
 <style scoped>
 .map-container {
+
   flex-grow: 1;
   max-width: 100%;
   max-height: 100%;

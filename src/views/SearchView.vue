@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { get } from '@/utils/api';
 import KebabPlace from '@/models/KebabPlaceModel';
 import KebabPlaceList from '@/components/KebabPlaceList.vue';
+import echo from '@/utils/echo';
 
 const searchResults = ref([]);
 
@@ -17,6 +18,12 @@ const fetchSearchResults = async () => {
 
 onMounted(() => {
   fetchSearchResults();
+
+  echo.channel('kebab-places')
+    .listen('kebab-place-created', (event) => {
+      const kebabPlace = new KebabPlace(event.kebabPlace);
+      searchResults.value.push(kebabPlace);
+    });
 });
 </script>
 
