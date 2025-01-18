@@ -4,8 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { get } from '@/utils/api'
 import KebabPlace from '@/models/KebabPlaceModel'
-import echo from '@/utils/echo'
-
+import Pusher from 'pusher-js'
 
 onMounted(async () => {
   const map = L.map('map').setView([51.207, 16.161], 13)
@@ -16,7 +15,7 @@ onMounted(async () => {
 
   const addKebabPlaceToMap = (kebabPlace) => {
     const { latitude, longitude } = kebabPlace.getCoordinates()
-    L.marker([latitude, longitude],).addTo(map)
+    L.marker([latitude, longitude]).addTo(map)
       .bindPopup(`<b>${kebabPlace.name}</b><br>${kebabPlace.address}`)
   }
 
@@ -31,11 +30,25 @@ onMounted(async () => {
     console.error('Error fetching kebab places:', error)
   }
 
-  echo.channel('kebab-place-created')
-    .listen('KebabPlaceCreated', (event) => {
-      const kebabPlace = new KebabPlace(event.kebabPlace)
-      addKebabPlaceToMap(kebabPlace)
-    })
+  const pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+    forceTLS: true,
+    wsHost: import.meta.env.VITE_WEBSOCKET_DOMAIN,
+  });
+
+  Pusher.logToConsole = true;
+
+  const channel = pusher.subscribe('kebab-places');
+  console.log('Subscribed to channel:', channel.name);
+
+  channel.bind('KebabPlaceCreated', (event) => {
+    console.log('KebabPlaceCreated event received', event)
+    const kebabPlaceData = event.kebabPlace;
+    console.log('KebabPlace data:', kebabPlaceData);
+    const kebabPlace = new KebabPlace(kebabPlaceData);
+    console.log('Adding kebab place to map:', kebabPlace);
+    addKebabPlaceToMap(kebabPlace);
+  });
 
   window.addEventListener('resize', () => {
     map.invalidateSize()
@@ -53,7 +66,6 @@ onMounted(async () => {
 
 <style scoped>
 .map-container {
-
   flex-grow: 1;
   max-width: 100%;
   max-height: 100%;

@@ -8,6 +8,8 @@ const echo = new Echo({
   key: import.meta.env.VITE_PUSHER_APP_KEY,
   cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
   forceTLS: true,
+  encrypted: true,
+  wsHost: import.meta.env.VITE_WEBSOCKET_DOMAIN,
 });
 
 export default echo;

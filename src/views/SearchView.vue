@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import { get } from '@/utils/api';
 import KebabPlace from '@/models/KebabPlaceModel';
 import KebabPlaceList from '@/components/KebabPlaceList.vue';
-import echo from '@/utils/echo';
+import Pusher from 'pusher-js';
 
 const searchResults = ref([]);
 
@@ -19,11 +19,25 @@ const fetchSearchResults = async () => {
 onMounted(() => {
   fetchSearchResults();
 
-  echo.channel('kebab-places-created')
-    .listen('KebabPlaceCreated', (event) => {
-      const kebabPlace = new KebabPlace(event.kebabPlace);
-      searchResults.value.push(kebabPlace);
-    });
+  const pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY, {
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+    forceTLS: true,
+    wsHost: import.meta.env.VITE_WEBSOCKET_DOMAIN,
+  });
+
+  Pusher.logToConsole = true;
+
+  const channel = pusher.subscribe('kebab-places');
+  console.log('Subscribed to channel:', channel.name);
+
+  channel.bind('KebabPlaceCreated', (event) => {
+    console.log('KebabPlaceCreated event received', event)
+    const kebabPlaceData = event.kebabPlace;
+    console.log('KebabPlace data:', kebabPlaceData);
+    const kebabPlace = new KebabPlace(kebabPlaceData);
+    console.log('Adding kebab place to search results:', kebabPlace);
+    searchResults.value.push(kebabPlace);
+  });
 });
 </script>
 
