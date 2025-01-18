@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, defineEmits } from 'vue';
 import { get } from '@/utils/api';
 import KebabPlace from '@/models/KebabPlaceModel';
 import BadgeComponent from '@/components/BadgeComponent.vue';
@@ -65,6 +65,8 @@ watch(itemsPerPage, () => {
 onMounted(() => {
   fetchKebabPlaces();
 });
+
+const emits = defineEmits(['kebabPlaceClick']);
 </script>
 
 <template>
@@ -108,7 +110,7 @@ onMounted(() => {
       </div>
     </div>
     <TransitionGroup name="list" tag="ul" class="w-full max-w-2xl">
-      <li v-for="place in filteredKebabPlaces" :key="place.id" class="flex flex-col mb-2 p-2 border border-gray-300 rounded-lg hover:bg-emerald-900 cursor-pointer" @click="window.open(place.googleMapsUrl, '_blank')">
+      <li v-for="place in filteredKebabPlaces" :key="place.id" class="flex flex-col mb-2 p-2 border border-gray-300 rounded-lg hover:bg-emerald-900 cursor-pointer" @click="emits('kebabPlaceClick', place)">
         <div class="flex-1">
           <h2 class="text-lg font-bold mb-1">{{ place.name }}</h2>
           <p class="mb-1">{{ place.address }}</p>
