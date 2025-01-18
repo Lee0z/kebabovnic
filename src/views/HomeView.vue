@@ -36,17 +36,12 @@ onMounted(async () => {
     wsHost: import.meta.env.VITE_WEBSOCKET_DOMAIN,
   });
 
-  Pusher.logToConsole = true;
 
   const channel = pusher.subscribe('kebab-places');
-  console.log('Subscribed to channel:', channel.name);
 
   channel.bind('KebabPlaceCreated', (event) => {
-    console.log('KebabPlaceCreated event received', event)
     const kebabPlaceData = event.kebabPlace;
-    console.log('KebabPlace data:', kebabPlaceData);
     const kebabPlace = new KebabPlace(kebabPlaceData);
-    console.log('Adding kebab place to map:', kebabPlace);
     addKebabPlaceToMap(kebabPlace);
   });
 
