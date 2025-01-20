@@ -191,7 +191,7 @@ const emits = defineEmits(['kebabPlaceClick']);
         <button @click="filterOpen = filterOpen === 'closed' ? '' : 'closed'" :class="{ 'bg-teal-500': filterOpen === 'closed' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
           Closed
         </button>
-        <input v-model="filterDateTime" type="text" placeholder="Day-HH:MM" class="p-2 bg-gray-300 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500" />
+        <input v-model="filterDateTime" type="text" placeholder="Day-HH:MM" class="p-2 bg-emerald-950 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500" />
       </div>
     </div>
     <TransitionGroup name="list" tag="ul" class="w-full max-w-2xl">
