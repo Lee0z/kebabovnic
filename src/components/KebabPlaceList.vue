@@ -7,10 +7,11 @@ import Filling from '@/models/FillingModel';
 import Sauce from '@/models/SauceModel';
 
 const kebabPlaces = ref([]);
+const totalKebabPlaces = ref(0);
 const searchQuery = ref('');
 const currentPage = ref(1);
 const totalPages = ref(1);
-const itemsPerPage = ref(20);
+const itemsPerPage = ref(5);
 const sortBy = ref('id');
 const sortOrder = ref('asc');
 const filterCraft = ref(null);
@@ -21,6 +22,9 @@ const filterFillings = ref([]);
 const filterSauces = ref([]);
 const filterLocation = ref('');
 const filterChain = ref(null);
+const filterOrdering = ref('');
+const filterOpen = ref('');
+const filterDateTime = ref('');
 const allFillings = ref([]);
 const allSauces = ref([]);
 const showFillings = ref(false);
@@ -33,21 +37,29 @@ const fetchKebabPlaces = async (page = 1) => {
       page,
       sby: sortBy.value,
       sdirection: sortOrder.value,
-      search: searchQuery.value,
+      filterFillings: filterFillings.value,
+      filterSauces: filterSauces.value,
+      filterCraft: filterCraft.value,
+      filterLocationType: filterLocationType.value,
+      filterStatus: filterStatus.value,
     };
 
     if (filterFillings.value.length) params.ffillings = JSON.stringify(filterFillings.value);
     if (filterSauces.value.length) params.fsauces = JSON.stringify(filterSauces.value);
     if (filterStatus.value) params.fstatus = filterStatus.value;
     if (filterCraft.value !== null) params.fcraft = filterCraft.value;
-    if (filterLocationType.value) params.flocationType = filterLocationType.value;
-    if (filterChainRestaurant.value) params.fchainRestaurant = filterChainRestaurant.value;
+    if (filterLocationType.value) params.flocation = filterLocationType.value;
+    if (filterChainRestaurant.value) params.fchain = filterChainRestaurant.value;
+    if (filterOrdering.value) params.fordering = filterOrdering.value;
+    if (filterOpen.value) params.fopen = filterOpen.value;
+    if (filterDateTime.value) params.fdatetime = filterDateTime.value;
 
     console.log('Filter parameters:', params);
 
     const queryString = new URLSearchParams(params).toString();
     const data = await get(`/kebab-places?${queryString}`);
     kebabPlaces.value = data.data.map(place => new KebabPlace(place));
+    totalKebabPlaces.value = data.total;
     currentPage.value = data.current_page;
     totalPages.value = data.last_page;
   } catch (error) {
@@ -79,7 +91,7 @@ const goToPage = (page) => {
   }
 };
 
-watch([itemsPerPage, sortBy, sortOrder, searchQuery, filterCraft, filterChainRestaurant, filterLocationType, filterStatus, filterFillings, filterSauces, filterLocation, filterChain], () => {
+watch([itemsPerPage, sortBy, sortOrder, searchQuery, filterCraft, filterChainRestaurant, filterLocationType, filterStatus, filterFillings, filterSauces, filterLocation, filterChain, filterOrdering, filterOpen, filterDateTime], () => {
   fetchKebabPlaces(currentPage.value);
 });
 
@@ -105,21 +117,7 @@ const emits = defineEmits(['kebabPlaceClick']);
           <option value="100">100</option>
         </select>
       </div>
-      <span class="mb-2">Found {{ kebabPlaces.length }} kebabs!</span>
-      <div class="w-full flex mb-2">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by name"
-          class="flex-1 p-2 bg-emerald-800 border border-emerald-900 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-emerald-900"
-        />
-        <button
-          @click="fetchKebabPlaces"
-          class="p-2 bg-emerald-500 text-white rounded-r-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        >
-          Search
-        </button>
-      </div>
+      <span class="mb-2">Found {{ totalKebabPlaces }} kebabs!</span>
       <div class="w-full flex justify-end mb-2">
         <label for="sort" class="mr-2">Sort by:</label>
         <select v-model="sortBy" id="sort" class="p-2 border bg-emerald-900 border-gray-300 rounded-lg mr-2">
@@ -172,6 +170,28 @@ const emits = defineEmits(['kebabPlaceClick']);
             </button>
           </div>
         </div>
+        <button @click="filterOrdering = filterOrdering === 'przez telefon' ? '' : 'przez telefon'" :class="{ 'bg-indigo-500': filterOrdering === 'przez telefon' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          By Phone
+        </button>
+        <button @click="filterOrdering = filterOrdering === 'własna strona' ? '' : 'własna strona'" :class="{ 'bg-indigo-500': filterOrdering === 'własna strona' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          Own Website
+        </button>
+        <button @click="filterOrdering = filterOrdering === 'własna aplikacja' ? '' : 'własna aplikacja'" :class="{ 'bg-indigo-500': filterOrdering === 'własna aplikacja' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          Own App
+        </button>
+        <button @click="filterOrdering = filterOrdering === 'pyszne.pl' ? '' : 'pyszne.pl'" :class="{ 'bg-indigo-500': filterOrdering === 'pyszne.pl' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          Pyszne.pl
+        </button>
+        <button @click="filterOrdering = filterOrdering === 'glovo' ? '' : 'glovo'" :class="{ 'bg-indigo-500': filterOrdering === 'glovo' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          Glovo
+        </button>
+        <button @click="filterOpen = filterOpen === 'open' ? '' : 'open'" :class="{ 'bg-teal-500': filterOpen === 'open' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          Open
+        </button>
+        <button @click="filterOpen = filterOpen === 'closed' ? '' : 'closed'" :class="{ 'bg-teal-500': filterOpen === 'closed' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          Closed
+        </button>
+        <input v-model="filterDateTime" type="text" placeholder="Day-HH:MM" class="p-2 bg-gray-300 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500" />
       </div>
     </div>
     <TransitionGroup name="list" tag="ul" class="w-full max-w-2xl">
@@ -187,6 +207,7 @@ const emits = defineEmits(['kebabPlaceClick']);
             <BadgeComponent v-if="place.openedAtYear" :text="`Since ${place.openedAtYear}`" color="blue" />
             <BadgeComponent v-if="place.googleMapsRating" :text="`⭐️ ${place.googleMapsRating}`" color="yellow" />
           </div>
+          <img v-if="place.image" :src="place.image" alt="Kebab Place Image" class="w-full h-auto mb-2 rounded-lg" />
           <a :href="place.googleMapsUrl" target="_blank" class="text-emerald-500 hover:underline">View on Google Maps</a>
         </div>
       </li>
