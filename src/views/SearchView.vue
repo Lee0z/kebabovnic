@@ -45,6 +45,27 @@ onMounted(() => {
     const kebabPlace = new KebabPlace(kebabPlaceData);
     searchResults.value.push(kebabPlace);
   });
+
+  channel.bind('KebabPlaceDeleted', (event) => {
+    const kebabPlaceId = event.kebabPlace.id;
+    searchResults.value = searchResults.value.filter(place => place.id !== kebabPlaceId);
+  });
+
+  channel.bind('KebabPlaceRatingChanged', (event) => {
+    const updatedKebabPlace = new KebabPlace(event.kebabPlace);
+    const index = searchResults.value.findIndex(place => place.id === updatedKebabPlace.id);
+    if (index !== -1) {
+      searchResults.value[index] = updatedKebabPlace;
+    }
+  });
+
+  channel.bind('KebabPlaceUpdated', (event) => {
+    const updatedKebabPlace = new KebabPlace(event.kebabPlace);
+    const index = searchResults.value.findIndex(place => place.id === updatedKebabPlace.id);
+    if (index !== -1) {
+      searchResults.value[index] = updatedKebabPlace;
+    }
+  });
 });
 </script>
 
