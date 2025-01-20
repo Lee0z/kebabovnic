@@ -54,8 +54,6 @@ const fetchKebabPlaces = async (page = 1) => {
     if (filterOpen.value) params.fopen = filterOpen.value;
     if (filterDateTime.value) params.fdatetime = filterDateTime.value;
 
-    console.log('Filter parameters:', params);
-
     const queryString = new URLSearchParams(params).toString();
     const data = await get(`/kebab-places?${queryString}`);
     kebabPlaces.value = data.data.map(place => new KebabPlace(place));

@@ -7,42 +7,8 @@ const apiClient = axios.create({
   },
 });
 
-export const get = async (url, params = {}) => {
-  try {
-    const response = await apiClient.get(url, { params });
-    return response.data;
-  } catch (error) {
-    console.error('API GET request error:', error);
-    throw error;
-  }
-};
-
-export const post = async (url, data) => {
-  try {
-    const response = await apiClient.post(url, data);
-    return response.data;
-  } catch (error) {
-    console.error('API POST request error:', error);
-    throw error;
-  }
-};
-
-export const put = async (url, data) => {
-  try {
-    const response = await apiClient.put(url, data);
-    return response.data;
-  } catch (error) {
-    console.error('API PUT request error:', error);
-    throw error;
-  }
-};
-
-export const del = async (url) => {
-  try {
-    const response = await apiClient.delete(url);
-    return response.data;
-  } catch (error) {
-    console.error('API DELETE request error:', error);
-    throw error;
-  }
-};
+export const get = (url, config = {}) => apiClient.get(url, config).then(response => response.data);
+export const post = (url, data, config = {}) => apiClient.post(url, data, config).then(response => response.data);
+export const put = (url, data, config = {}) => apiClient.put(url, data, config).then(response => response.data);
+export const del = (url, config = {}) => apiClient.delete(url, config).then(response => response.data);
+export const patch = (url, data, config = {}) => apiClient.patch(url, data, config).then(response => response.data);

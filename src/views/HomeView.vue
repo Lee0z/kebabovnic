@@ -11,6 +11,7 @@ const map = ref(null);
 const kebabPlaces = ref([]);
 const selectedKebabPlace = ref(null);
 const isModalOpen = ref(false);
+const markers = new Map();
 
 const fetchKebabPlaces = async () => {
   try {
@@ -24,11 +25,25 @@ const fetchKebabPlaces = async () => {
 
 const addKebabPlaceToMap = (kebabPlace) => {
   const { latitude, longitude } = kebabPlace.getCoordinates();
-  const marker = L.marker([latitude, longitude]).addTo(map.value)
+  const marker = L.marker([latitude, longitude]).addTo(map.value);
+  markers.set(kebabPlace.id, marker);
 
   marker.on('click', () => {
     openModal(kebabPlace);
   });
+};
+
+const removeKebabPlaceFromMap = (kebabPlaceId) => {
+  const marker = markers.get(kebabPlaceId);
+  if (marker) {
+    map.value.removeLayer(marker);
+    markers.delete(kebabPlaceId);
+  }
+};
+
+const updateKebabPlaceOnMap = (kebabPlace) => {
+  removeKebabPlaceFromMap(kebabPlace.id);
+  addKebabPlaceToMap(kebabPlace);
 };
 
 const openModal = (kebabPlace) => {
@@ -57,10 +72,27 @@ onMounted(() => {
 
   const channel = pusher.subscribe('kebab-places');
 
+  Pusher.logToConsole = true;
+
   channel.bind('KebabPlaceCreated', (event) => {
     const kebabPlaceData = event.kebabPlace;
     const kebabPlace = new KebabPlace(kebabPlaceData);
     addKebabPlaceToMap(kebabPlace);
+  });
+
+  channel.bind('KebabPlaceDeleted', (event) => {
+    const kebabPlaceId = event.kebabPlace.id;
+    removeKebabPlaceFromMap(kebabPlaceId);
+  });
+
+  channel.bind('KebabPlaceRatingChanged', (event) => {
+    const updatedKebabPlace = new KebabPlace(event.kebabPlace);
+    updateKebabPlaceOnMap(updatedKebabPlace);
+  });
+
+  channel.bind('KebabPlaceUpdated', (event) => {
+    const updatedKebabPlace = new KebabPlace(event.kebabPlace);
+    updateKebabPlaceOnMap(updatedKebabPlace);
   });
 
   window.addEventListener('resize', () => {
@@ -70,6 +102,7 @@ onMounted(() => {
 </script>
 
 <template>
+
   <main class="flex flex-col items-center flex-grow h-screen pt-16 w-full">
     <div class="map-container flex-grow w-full max-w-4xl mx-auto">
       <div id="map" class="h-full w-full"></div>
@@ -93,3 +126,4 @@ onMounted(() => {
   background-color: #1a1a1a;
 }
 </style>
+

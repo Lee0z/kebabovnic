@@ -120,6 +120,8 @@ const handleSubmit = async () => {
         }
       });
       const userInfo = await userInfoResponse.json();
+      localStorage.setItem('userName', userInfo.name);
+      cookies.set('user_id', userInfo.id, { secure: true, sameSite: 'strict' });
       emit('update-username', userInfo.name);
     } catch (error) {
       console.error('Login failed', error);
@@ -155,6 +157,8 @@ const handleSubmit = async () => {
         }
       });
       const userInfo = await userInfoResponse.json();
+      localStorage.setItem('userName', userInfo.name);
+      cookies.set('user_id', userInfo.id, { secure: true, sameSite: 'strict' });
       emit('update-username', userInfo.name);
     } catch (error) {
       console.error('Registration failed', error);
@@ -166,6 +170,7 @@ const handleSubmit = async () => {
 const handleLogout = () => {
   cookies.remove('auth_token')
   cookies.remove('remember_token')
+  cookies.remove('user_id')
   toast.success('Logout successful')
   closeModal()
 }
