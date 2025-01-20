@@ -1,54 +1,63 @@
 <template>
   <transition name="modal">
     <div v-if="isOpen" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" @click.self="onRequestClose">
-      <div class="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3">
-        <span class="text-gray-500 hover:text-gray-300 cursor-pointer float-right text-2xl" @click="onRequestClose">&times;</span>
-        <h2 class="text-xl font-bold mb-4">{{ kebabPlace.name }}</h2>
-        <div class="mb-4 flex flex-wrap gap-2">
-          <BadgeComponent v-if="kebabPlace.isCraft" text="Craft" color="purple" />
-          <BadgeComponent v-if="kebabPlace.isChainRestaurant" text="Chain Restaurant" color="yellow" />
-          <BadgeComponent :text="getStatusText(kebabPlace.status)" :color="getStatusColor(kebabPlace.status)" />
-          <BadgeComponent :text="getLocationTypeText(kebabPlace.locationType)" color="orange" />
-          <div v-for="social in kebabPlace.socialMedia" :key="social.name" class="flex items-center gap-2">
-            <a :href="social.url" target="_blank" rel="noopener noreferrer">
-              <i :class="getSocialIconClass(social.name)" class="text-pink-500"></i>
-            </a>
+      <div class="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-hidden">
+        <div class="overflow-y-auto max-h-[80vh]">
+          <span class="text-gray-500 hover:text-gray-300 cursor-pointer float-right text-2xl" @click="onRequestClose">&times;</span>
+          <h2 class="text-xl font-bold mb-4">{{ kebabPlace.name }}</h2>
+          <div class="mb-4 flex flex-wrap gap-2">
+            <BadgeComponent v-if="kebabPlace.isCraft" text="Craft" color="purple" />
+            <BadgeComponent v-if="kebabPlace.isChainRestaurant" text="Chain Restaurant" color="yellow" />
+            <BadgeComponent :text="getStatusText(kebabPlace.status)" :color="getStatusColor(kebabPlace.status)" />
+            <BadgeComponent :text="getLocationTypeText(kebabPlace.locationType)" color="orange" />
+            <div v-for="social in kebabPlace.socialMedia" :key="social.name" class="flex items-center gap-2">
+              <a :href="social.url" target="_blank" rel="noopener noreferrer">
+                <i :class="getSocialIconClass(social.name)" class="text-pink-500"></i>
+              </a>
+            </div>
           </div>
-        </div>
-        <p v-if="kebabPlace.address" class="mb-2"><strong>Address:</strong> {{ kebabPlace.address }}</p>
-        <p v-if="kebabPlace.phone" class="mb-2"><strong>Phone:</strong> {{ kebabPlace.phone }}</p>
-        <p v-if="kebabPlace.website" class="mb-2"><strong>Website:</strong> <a :href="kebabPlace.website" target="_blank" class="text-blue-400">{{ kebabPlace.website }}</a></p>
-        <p v-if="kebabPlace.googleMapsRating" class="mb-2"><strong>Google Maps Rating:</strong> {{ kebabPlace.googleMapsRating }}</p>
-        <p v-if="kebabPlace.openedAtYear" class="mb-2"><strong>Opened At:</strong> {{ kebabPlace.openedAtYear }}</p>
-        <p v-if="kebabPlace.closedAtYear" class="mb-2"><strong>Closed At:</strong> {{ kebabPlace.closedAtYear }}</p>
-        <p class="mb-2"><strong>Opening Hours:</strong></p>
-        <table class="mb-2 w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-700">
-              <th class="p-2 border border-gray-600">Day</th>
-              <th class="p-2 border border-gray-600">From</th>
-              <th class="p-2 border border-gray-600">To</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="hours in kebabPlace.openingHours" :key="hours.day" class="hover:bg-gray-700">
-              <td class="p-2 border border-gray-600">{{ translateDay(hours.day) }}</td>
-              <td class="p-2 border border-gray-600" :class="{ 'text-red-500': !hours.from || hours.from === 'nieczynne' }">{{ hours.from === 'nieczynne' ? 'Closed' : (hours.from || 'Closed') }}</td>
-              <td class="p-2 border border-gray-600" :class="{ 'text-red-500': !hours.to || hours.to === 'nieczynne' }">{{ hours.to === 'nieczynne' ? 'Closed' : (hours.to || 'Closed') }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-if="fillings.length" class="mb-2"><strong>Fillings:</strong></p>
-        <div v-if="fillings.length" class="mb-2 flex flex-wrap gap-2">
-          <BadgeComponent v-for="filling in fillings" :key="filling.id" :text="filling.name" :color="filling.hexColor" />
-        </div>
-        <p v-if="sauces.length" class="mb-2"><strong>Sauces:</strong></p>
-        <div v-if="sauces.length" class="mb-2 flex flex-wrap gap-2">
-          <BadgeComponent v-for="sauce in sauces" :key="sauce.id" :text="sauce.name" :color="sauce.hexColor" />
-        </div>
-        <p v-if="translatedOrderOptions.length" class="mb-2"><strong>Order Options:</strong></p>
-        <div v-if="translatedOrderOptions.length" class="mb-2 flex flex-wrap gap-2">
-          <BadgeComponent v-for="option in translatedOrderOptions" :key="option" :text="option" color="orange" />
+          <p v-if="kebabPlace.address" class="mb-2"><strong>Address:</strong> {{ kebabPlace.address }}</p>
+          <p v-if="kebabPlace.phone" class="mb-2"><strong>Phone:</strong> {{ kebabPlace.phone }}</p>
+          <p v-if="kebabPlace.website" class="mb-2"><strong>Website:</strong> <a :href="kebabPlace.website" target="_blank" class="text-blue-400">{{ kebabPlace.website }}</a></p>
+          <p v-if="kebabPlace.googleMapsRating" class="mb-2"><strong>Google Maps Rating:</strong> {{ kebabPlace.googleMapsRating }}</p>
+          <p v-if="kebabPlace.openedAtYear" class="mb-2"><strong>Opened At:</strong> {{ kebabPlace.openedAtYear }}</p>
+          <p v-if="kebabPlace.closedAtYear" class="mb-2"><strong>Closed At:</strong> {{ kebabPlace.closedAtYear }}</p>
+          <p class="mb-2"><strong>Opening Hours:</strong></p>
+          <table class="mb-2 w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-700">
+                <th class="p-2 border border-gray-600">Day</th>
+                <th class="p-2 border border-gray-600">From</th>
+                <th class="p-2 border border-gray-600">To</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="hours in kebabPlace.openingHours" :key="hours.day" class="hover:bg-gray-700">
+                <td class="p-2 border border-gray-600">{{ translateDay(hours.day) }}</td>
+                <td class="p-2 border border-gray-600" :class="{ 'text-red-500': !hours.from || hours.from === 'nieczynne' }">{{ hours.from === 'nieczynne' ? 'Closed' : (hours.from || 'Closed') }}</td>
+                <td class="p-2 border border-gray-600" :class="{ 'text-red-500': !hours.to || hours.to === 'nieczynne' }">{{ hours.to === 'nieczynne' ? 'Closed' : (hours.to || 'Closed') }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="fillings.length" class="mb-2"><strong>Fillings:</strong></p>
+          <div v-if="fillings.length" class="mb-2 flex flex-wrap gap-2">
+            <BadgeComponent v-for="filling in fillings" :key="filling.id" :text="filling.name" :color="filling.hexColor" />
+          </div>
+          <p v-if="sauces.length" class="mb-2"><strong>Sauces:</strong></p>
+          <div v-if="sauces.length" class="mb-2 flex flex-wrap gap-2">
+            <BadgeComponent v-for="sauce in sauces" :key="sauce.id" :text="sauce.name" :color="sauce.hexColor" />
+          </div>
+          <p v-if="translatedOrderOptions.length" class="mb-2"><strong>Order Options:</strong></p>
+          <div v-if="translatedOrderOptions.length" class="mb-2 flex flex-wrap gap-2">
+            <BadgeComponent v-for="option in translatedOrderOptions" :key="option" :text="option" color="orange" />
+          </div>
+          <p v-if="comments.length" class="mb-2"><strong>Comments:</strong></p>
+          <div v-if="comments.length" class="mb-2 flex flex-col gap-2">
+            <div v-for="comment in comments" :key="comment.id" class="p-2 bg-gray-700 rounded-lg">
+              <p class="mb-1"><strong>{{ comment.userName }}:</strong> {{ comment.content }}</p>
+              <p class="text-sm text-gray-400">{{ new Date(comment.createdAt).toLocaleString() }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -61,6 +70,7 @@ import { ref, watch, computed } from 'vue';
 import { get } from '@/utils/api';
 import Filling from '@/models/FillingModel';
 import Sauce from '@/models/SauceModel';
+import Comment from '@/models/CommentModel';
 
 export default {
   components: {
@@ -84,6 +94,7 @@ export default {
   setup(props) {
     const fillings = ref([]);
     const sauces = ref([]);
+    const comments = ref([]);
 
     const fetchFillings = async () => {
       try {
@@ -111,10 +122,22 @@ export default {
       }
     };
 
+    const fetchComments = async () => {
+      try {
+        const response = await get(`/kebab-places/${props.kebabPlace.id}`);
+        if (response) {
+          comments.value = response.comments.map(comment => new Comment(comment));
+        }
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    };
+
     watch(() => props.kebabPlace, () => {
       if (props.kebabPlace) {
         fetchFillings();
         fetchSauces();
+        fetchComments();
       }
     }, { immediate: true });
 
@@ -196,6 +219,7 @@ export default {
     return {
       fillings,
       sauces,
+      comments,
       getStatusText,
       getStatusColor,
       getLocationTypeText,
