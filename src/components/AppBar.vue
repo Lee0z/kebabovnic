@@ -12,6 +12,10 @@
         <MagnifyingGlassIcon class="w-5 h-5 md:w-6 md:h-6" />
         <span>List kebabs</span>
       </RouterLink>
+      <button v-if="username" @click="openSuggestionsModal" class="flex items-center space-x-1 md:space-x-2">
+        <UserIcon class="w-5 h-5 md:w-6 md:h-6" />
+        <span>My Suggestions</span>
+      </button>
       <span v-if="username" class="text-white mr-4">Hello, {{ username }}!</span>
       <button v-if="username" @click="handleLogout" class="flex items-center space-x-1 md:space-x-2">
         <UserIcon class="w-5 h-5 md:w-6 md:h-6" />
@@ -22,6 +26,7 @@
         <span>Login</span>
       </button>
     </div>
+    <SuggestionsComponent v-if="isSuggestionsModalOpen" @close="isSuggestionsModalOpen = false" />
   </nav>
 </template>
 
@@ -31,15 +36,22 @@ import { HomeIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outli
 import { ref, onMounted } from 'vue'
 import Cookies from 'universal-cookie'
 import { useToast } from 'vue-toastification'
+import SuggestionsComponent from './SuggestionsComponent.vue'
 
 const cookies = new Cookies()
 const username = ref('')
 const toast = useToast()
+const isSuggestionsModalOpen = ref(false)
 
 const handleLogout = () => {
   cookies.remove('auth_token')
+  cookies.remove('user_id')
   username.value = ''
   toast.success('Logout successful')
+}
+
+const openSuggestionsModal = () => {
+  isSuggestionsModalOpen.value = true
 }
 
 onMounted(() => {

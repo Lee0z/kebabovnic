@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppBar from '@/components/AppBar.vue'
 import LoginRegisterModal from '@/components/LoginRegisterModal.vue' // Import the component
+import Cookies from 'universal-cookie';
 
 const loginRegisterModal = ref(null)
 const appBar = ref(null)
@@ -18,6 +19,18 @@ const handleLogout = () => {
 const updateUsername = (name) => {
   appBar.value.updateUsername(name)
 }
+
+const cookies = new Cookies();
+const isLoggedIn = ref(!!cookies.get('auth_token'));
+const loggedInUserId = ref(cookies.get('user_id'));
+const isKebabPlaceDetailsOpen = ref(false);
+const selectedKebabPlace = ref(null);
+
+
+const closeKebabPlaceDetails = () => {
+  isKebabPlaceDetailsOpen.value = false;
+  selectedKebabPlace.value = null;
+};
 </script>
 
 <template>
@@ -27,6 +40,13 @@ const updateUsername = (name) => {
       <RouterView />
     </main>
     <LoginRegisterModal ref="loginRegisterModal" @update-username="updateUsername" />
+    <KebabPlaceDetails
+      :isOpen="isKebabPlaceDetailsOpen"
+      :onRequestClose="closeKebabPlaceDetails"
+      :kebabPlace="selectedKebabPlace"
+      :isLoggedIn="isLoggedIn"
+      :loggedInUserId="loggedInUserId"
+    />
   </div>
 </template>
 

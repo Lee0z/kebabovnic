@@ -26,6 +26,7 @@ class KebabPlace {
     this.socialMedia = data.social_media;
     this.createdAt = data.created_at;
     this.updatedAt = data.updated_at;
+    this.isFavorite = data.is_favorite;
   }
 
   getCoordinates() {

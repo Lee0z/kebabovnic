@@ -3,8 +3,17 @@
     <div v-if="isOpen" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" @click.self="onRequestClose">
       <div class="bg-gray-800 text-white p-4 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-hidden">
         <div class="overflow-y-auto max-h-[80vh]">
-          <span class="text-gray-500 hover:text-gray-300 cursor-pointer float-right text-2xl" @click="onRequestClose">&times;</span>
-          <h2 class="text-xl font-bold mb-4">{{ kebabPlace.name }}</h2>
+          <div class="flex justify-end items-center mb-4">
+            <LightBulbIcon class="w-6 h-6 text-gray-500 hover:text-gray-300 cursor-pointer" @click="openSuggestionModal" />
+            <XMarkIcon class="w-6 h-6 text-gray-500 hover:text-gray-300 cursor-pointer" @click="onRequestClose" />
+          </div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">{{ kebabPlace.name }}</h2>
+            <button v-if="isLoggedIn" @click="toggleFavorite" class="text-red-500 hover:text-red-700">
+              <HeartIcon v-if="isFavorite" class="w-6 h-6" />
+              <HeartIconOutline v-else class="w-6 h-6" />
+            </button>
+          </div>
           <div class="mb-4 flex flex-wrap gap-2">
             <BadgeComponent v-if="kebabPlace.isCraft" text="Craft" color="purple" />
             <BadgeComponent v-if="kebabPlace.isChainRestaurant" text="Chain Restaurant" color="yellow" />
@@ -56,25 +65,45 @@
             <div v-for="comment in comments" :key="comment.id" class="p-2 bg-gray-700 rounded-lg">
               <p class="mb-1"><strong>{{ comment.userName }}:</strong> {{ comment.content }}</p>
               <p class="text-sm text-gray-400">{{ new Date(comment.createdAt).toLocaleString() }}</p>
+              <div v-if="isLoggedIn && comment.userId === loggedInUserId" class="flex gap-2 mt-2">
+                <button @click="editComment(comment)" class="text-blue-400 hover:underline">Edit</button>
+                <button @click="deleteComment(comment.id)" class="text-red-400 hover:underline">Delete</button>
+              </div>
             </div>
+          </div>
+          <div v-if="isLoggedIn" class="mt-4">
+            <textarea v-model="newComment" placeholder="Add a comment..." class="w-full p-2 bg-gray-700 text-white rounded-lg"></textarea>
+            <button @click="addComment" class="mt-2 p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">Add Comment</button>
           </div>
         </div>
       </div>
     </div>
   </transition>
+  <SuggestionAddComponent v-if="isSuggestionModalOpen" @close="isSuggestionModalOpen = false" :kebabPlaceId="kebabPlace.id" />
 </template>
 
 <script>
 import BadgeComponent from './BadgeComponent.vue';
+import SuggestionAddComponent from './SuggestionAddComponent.vue';
 import { ref, watch, computed } from 'vue';
-import { get } from '@/utils/api';
+import { get, put, patch, del } from '@/utils/api';
 import Filling from '@/models/FillingModel';
 import Sauce from '@/models/SauceModel';
-import Comment from '@/models/CommentModel';
+import CommentModel from '@/models/CommentModel';
+import { XMarkIcon, LightBulbIcon } from '@heroicons/vue/24/outline';
+import { HeartIcon as HeartIconOutline } from '@heroicons/vue/24/outline';
+import { HeartIcon } from '@heroicons/vue/24/solid';
+import Cookies from 'universal-cookie';
+import { useToast } from 'vue-toastification';
 
 export default {
   components: {
-    BadgeComponent
+    BadgeComponent,
+    SuggestionAddComponent,
+    XMarkIcon,
+    LightBulbIcon,
+    HeartIcon,
+    HeartIconOutline
   },
   props: {
     isOpen: {
@@ -89,12 +118,30 @@ export default {
       type: Object,
       required: true,
       default: () => ({})
+    },
+    isLoggedIn: {
+      type: Boolean,
+      required: true
+    },
+    loggedInUserId: {
+      type: Number,
+      required: true
     }
   },
   setup(props) {
+    const cookies = new Cookies();
+    const toast = useToast();
     const fillings = ref([]);
     const sauces = ref([]);
     const comments = ref([]);
+    const newComment = ref('');
+    const editingComment = ref(null);
+    const isSuggestionModalOpen = ref(false);
+    const isFavorite = ref(props.kebabPlace ? props.kebabPlace.isFavorite : false);
+
+    const openSuggestionModal = () => {
+      isSuggestionModalOpen.value = true;
+    };
 
     const fetchFillings = async () => {
       try {
@@ -126,10 +173,109 @@ export default {
       try {
         const response = await get(`/kebab-places/${props.kebabPlace.id}`);
         if (response) {
-          comments.value = response.comments.map(comment => new Comment(comment));
+          comments.value = CommentModel.fromApiResponse(response.comments);
         }
       } catch (error) {
         console.error('Error fetching comments:', error);
+      }
+    };
+
+    const addComment = async () => {
+      if (!newComment.value.trim()) return;
+      try {
+        const data = await put(`/kebab-places/${props.kebabPlace.id}/comment`, {
+          content: newComment.value
+        }, {
+          headers: {
+            Authorization: `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        comments.value.push(new CommentModel(data.comment));
+        newComment.value = '';
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    };
+
+    const editComment = (comment) => {
+      editingComment.value = { ...comment };
+      newComment.value = comment.content;
+    };
+
+    const updateComment = async () => {
+      if (!editingComment.value || !newComment.value.trim()) return;
+      try {
+        const data = await patch(`/comment/${editingComment.value.id}`, {
+          content: newComment.value
+        }, {
+          headers: {
+            Authorization: `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        const index = comments.value.findIndex(comment => comment.id === editingComment.value.id);
+        if (index !== -1) {
+          comments.value[index] = new CommentModel(data.comment);
+        }
+        editingComment.value = null;
+        newComment.value = '';
+      } catch (error) {
+        console.error('Error updating comment:', error);
+      }
+    };
+
+    const deleteComment = async (commentId) => {
+      try {
+        await del(`/comment/${commentId}`, {
+          headers: {
+            Authorization: `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        comments.value = comments.value.filter(comment => comment.id !== commentId);
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    };
+
+    const addFavorite = async (kebabPlaceId) => {
+      try {
+        await put(`/kebab-places/${kebabPlaceId}/fav`, {}, {
+          headers: {
+            'Authorization': `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        isFavorite.value = true;
+        toast.success('Added to favorites');
+      } catch (error) {
+        if (error.response && error.response.status === 409) {
+          isFavorite.value = true;
+          toast.success('Already in favorites');
+        } else {
+          console.error('Error adding favorite:', error);
+          toast.error('Failed to add favorite');
+        }
+      }
+    };
+
+    const removeFavorite = async (kebabPlaceId) => {
+      try {
+        await del(`/kebab-places/${kebabPlaceId}/unfav`, {
+          headers: {
+            'Authorization': `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        isFavorite.value = false;
+        toast.success('Removed from favorites');
+      } catch (error) {
+        console.error('Error removing favorite:', error);
+        toast.error('Failed to remove favorite');
+      }
+    };
+
+    const toggleFavorite = () => {
+      if (isFavorite.value) {
+        removeFavorite(props.kebabPlace.id);
+      } else {
+        addFavorite(props.kebabPlace.id);
       }
     };
 
@@ -138,6 +284,7 @@ export default {
         fetchFillings();
         fetchSauces();
         fetchComments();
+        isFavorite.value = props.kebabPlace.isFavorite;
       }
     }, { immediate: true });
 
@@ -220,18 +367,28 @@ export default {
       fillings,
       sauces,
       comments,
+      newComment,
+      editingComment,
+      addComment,
+      editComment,
+      updateComment,
+      deleteComment,
       getStatusText,
       getStatusColor,
       getLocationTypeText,
       translatedOrderOptions,
       translateDay,
+      openSuggestionModal,
+      isSuggestionModalOpen,
+      toggleFavorite,
+      isFavorite,
       getSocialIconClass(name) {
         switch (name.toLowerCase()) {
-          case 'facebook':
+          case 'fb':
             return 'fab fa-facebook';
-          case 'instagram':
+          case 'ig':
             return 'fab fa-instagram';
-          case 'tiktok':
+          case 'tt':
             return 'fab fa-tiktok';
           case 'x':
             return 'fab fa-twitter';
@@ -252,5 +409,3 @@ export default {
   opacity: 0;
 }
 </style>
-
-
