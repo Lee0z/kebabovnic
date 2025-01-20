@@ -37,15 +37,15 @@ const fetchKebabPlaces = async (page = 1) => {
       page,
       sby: sortBy.value,
       sdirection: sortOrder.value,
-      filterFillings: filterFillings.value,
-      filterSauces: filterSauces.value,
+      filterFillings: filterFillings.value.map(filling => filling.id),
+      filterSauces: filterSauces.value.map(sauce => sauce.id),
       filterCraft: filterCraft.value,
       filterLocationType: filterLocationType.value,
       filterStatus: filterStatus.value,
     };
 
-    if (filterFillings.value.length) params.ffillings = JSON.stringify(filterFillings.value);
-    if (filterSauces.value.length) params.fsauces = JSON.stringify(filterSauces.value);
+    if (filterFillings.value.length) params.ffillings = JSON.stringify(filterFillings.value.map(filling => filling.id));
+    if (filterSauces.value.length) params.fsauces = JSON.stringify(filterSauces.value.map(sauce => sauce.id));
     if (filterStatus.value) params.fstatus = filterStatus.value;
     if (filterCraft.value !== null) params.fcraft = filterCraft.value;
     if (filterLocationType.value) params.flocation = filterLocationType.value;
@@ -60,6 +60,7 @@ const fetchKebabPlaces = async (page = 1) => {
     totalKebabPlaces.value = data.total;
     currentPage.value = data.current_page;
     totalPages.value = data.last_page;
+    console.log('query:', queryString);
   } catch (error) {
     console.error('Error fetching kebab places:', error);
   }
@@ -89,7 +90,26 @@ const goToPage = (page) => {
   }
 };
 
+const clearFilters = () => {
+  filterCraft.value = null;
+  filterChainRestaurant.value = false;
+  filterLocationType.value = '';
+  filterStatus.value = '';
+  filterFillings.value = [];
+  filterSauces.value = [];
+  filterLocation.value = '';
+  filterChain.value = null;
+  filterOrdering.value = '';
+  filterOpen.value = '';
+  filterDateTime.value = '';
+  fetchKebabPlaces();
+};
+
 watch([itemsPerPage, sortBy, sortOrder, searchQuery, filterCraft, filterChainRestaurant, filterLocationType, filterStatus, filterFillings, filterSauces, filterLocation, filterChain, filterOrdering, filterOpen, filterDateTime], () => {
+  fetchKebabPlaces(currentPage.value);
+});
+
+watch([filterFillings, filterSauces], () => {
   fetchKebabPlaces(currentPage.value);
 });
 
@@ -130,67 +150,94 @@ const emits = defineEmits(['kebabPlaceClick']);
       </div>
       <div class="w-full flex flex-wrap gap-2 justify-end mb-2">
         <label class="mr-2">Filters:</label>
-        <button @click="filterCraft = !filterCraft" :class="{ 'bg-purple-500': filterCraft }" class="p-2 bg-purple-300 text-white rounded-lg hover:bg-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
-          Craft
-        </button>
-        <button @click="filterChainRestaurant = !filterChainRestaurant" :class="{ 'bg-gray-500': filterChainRestaurant }" class="p-2 bg-gray-300 text-white rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
-          Chain Restaurant
-        </button>
-        <button @click="filterLocationType = filterLocationType === 'lokal' ? '' : 'lokal'" :class="{ 'bg-orange-500': filterLocationType === 'lokal' }" class="p-2 bg-orange-300 text-white rounded-lg hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500">
-          Restaurant
-        </button>
-        <button @click="filterLocationType = filterLocationType === 'buda' ? '' : 'buda'" :class="{ 'bg-orange-500': filterLocationType === 'buda' }" class="p-2 bg-orange-300 text-white rounded-lg hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500">
-          Food Truck
-        </button>
-        <button @click="filterStatus = filterStatus === 'otwarte' ? '' : 'otwarte'" :class="{ 'bg-green-500': filterStatus === 'otwarte' }" class="p-2 bg-green-300 text-white rounded-lg hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-green-500">
-          Open
-        </button>
-        <button @click="filterStatus = filterStatus === 'zamknięte' ? '' : 'zamknięte'" :class="{ 'bg-red-500': filterStatus === 'zamknięte' }" class="p-2 bg-red-300 text-white rounded-lg hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-red-500">
-          Closed
-        </button>
-        <button @click="showFillings = !showFillings" class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          Fillings
-        </button>
-        <div v-if="showFillings" class="w-full flex flex-wrap gap-2 justify-end mb-2">
-          <div v-for="filling in allFillings" :key="filling.id" class="flex items-center gap-2">
-            <button @click="filterFillings.includes(filling.id) ? filterFillings.splice(filterFillings.indexOf(filling.id), 1) : filterFillings.push(filling.id)" :class="{ 'bg-blue-500': filterFillings.includes(filling.id) }" class="p-2 bg-blue-300 text-white rounded-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              {{ filling.name }}
+        <div class="flex flex-col gap-2">
+          <div class="flex gap-2">
+            <label>Type:</label>
+            <button @click="filterCraft = !filterCraft" :class="{ 'bg-purple-500': filterCraft }" class="p-2 bg-purple-300 text-white rounded-lg hover:bg-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              Craft
+            </button>
+            <button @click="filterChainRestaurant = !filterChainRestaurant" :class="{ 'bg-gray-500': filterChainRestaurant }" class="p-2 bg-gray-300 text-white rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+              Chain Restaurant
             </button>
           </div>
-        </div>
-        <button @click="showSauces = !showSauces" class="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          Sauces
-        </button>
-        <div v-if="showSauces" class="w-full flex flex-wrap gap-2 justify-end mb-2">
-          <div v-for="sauce in allSauces" :key="sauce.id" class="flex items-center gap-2">
-            <button @click="filterSauces.includes(sauce.id) ? filterSauces.splice(filterSauces.indexOf(sauce.id), 1) : filterSauces.push(sauce.id)" :class="{ 'bg-yellow-500': filterSauces.includes(sauce.id) }" class="p-2 bg-yellow-300 text-white rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-              {{ sauce.name }}
+          <div class="flex gap-2">
+            <label>Location:</label>
+            <button @click="filterLocationType = filterLocationType === 'lokal' ? '' : 'lokal'" :class="{ 'bg-orange-500': filterLocationType === 'lokal' }" class="p-2 bg-orange-300 text-white rounded-lg hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500">
+              Restaurant
+            </button>
+            <button @click="filterLocationType = filterLocationType === 'buda' ? '' : 'buda'" :class="{ 'bg-orange-500': filterLocationType === 'buda' }" class="p-2 bg-orange-300 text-white rounded-lg hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500">
+              Food Truck
             </button>
           </div>
+          <div class="flex gap-2">
+            <label>Status:</label>
+            <button @click="filterStatus = filterStatus === 'otwarte' ? '' : 'otwarte'" :class="{ 'bg-green-500': filterStatus === 'otwarte' }" class="p-2 bg-green-300 text-white rounded-lg hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-green-500">
+              Open
+            </button>
+            <button @click="filterStatus = filterStatus === 'zamknięte' ? '' : 'zamknięte'" :class="{ 'bg-red-500': filterStatus === 'zamknięte' }" class="p-2 bg-red-300 text-white rounded-lg hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-red-500">
+              Closed
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <label>Fillings:</label>
+            <button @click="showFillings = !showFillings" class="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Fillings
+            </button>
+          </div>
+          <div v-if="showFillings" class="w-full flex flex-wrap gap-2 justify-end mb-2">
+            <div v-for="filling in allFillings" :key="filling.id" class="flex items-center gap-2">
+              <button @click="filterFillings.includes(filling) ? filterFillings.splice(filterFillings.indexOf(filling), 1) : filterFillings.push(filling)" :class="{ 'bg-blue-500': filterFillings.includes(filling) }" class="p-2 bg-blue-300 text-white rounded-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {{ filling.name }}
+              </button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <label>Sauces:</label>
+            <button @click="showSauces = !showSauces" class="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              Sauces
+            </button>
+          </div>
+          <div v-if="showSauces" class="w-full flex flex-wrap gap-2 justify-end mb-2">
+            <div v-for="sauce in allSauces" :key="sauce.id" class="flex items-center gap-2">
+              <button @click="filterSauces.includes(sauce) ? filterSauces.splice(filterSauces.indexOf(sauce), 1) : filterSauces.push(sauce)" :class="{ 'bg-yellow-500': filterSauces.includes(sauce) }" class="p-2 bg-yellow-300 text-white rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                {{ sauce.name }}
+              </button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <label>Ordering:</label>
+            <button @click="filterOrdering = filterOrdering === 'przez telefon' ? '' : 'przez telefon'" :class="{ 'bg-indigo-500': filterOrdering === 'przez telefon' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              By Phone
+            </button>
+            <button @click="filterOrdering = filterOrdering === 'własna strona' ? '' : 'własna strona'" :class="{ 'bg-indigo-500': filterOrdering === 'własna strona' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Own Website
+            </button>
+            <button @click="filterOrdering = filterOrdering === 'własna aplikacja' ? '' : 'własna aplikacja'" :class="{ 'bg-indigo-500': filterOrdering === 'własna aplikacja' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Own App
+            </button>
+            <button @click="filterOrdering = filterOrdering === 'pyszne.pl' ? '' : 'pyszne.pl'" :class="{ 'bg-indigo-500': filterOrdering === 'pyszne.pl' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Pyszne.pl
+            </button>
+            <button @click="filterOrdering = filterOrdering === 'glovo' ? '' : 'glovo'" :class="{ 'bg-indigo-500': filterOrdering === 'glovo' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Glovo
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <label>Open Status:</label>
+            <button @click="filterOpen = filterOpen === 'open' ? '' : 'open'" :class="{ 'bg-teal-500': filterOpen === 'open' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              Open
+            </button>
+            <button @click="filterOpen = filterOpen === 'closed' ? '' : 'closed'" :class="{ 'bg-teal-500': filterOpen === 'closed' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              Closed
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <label>Date/Time:</label>
+            <input v-model="filterDateTime" type="text" placeholder="Day-HH:MM" class="p-2 bg-emerald-950 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500" />
+          </div>
         </div>
-        <button @click="filterOrdering = filterOrdering === 'przez telefon' ? '' : 'przez telefon'" :class="{ 'bg-indigo-500': filterOrdering === 'przez telefon' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          By Phone
-        </button>
-        <button @click="filterOrdering = filterOrdering === 'własna strona' ? '' : 'własna strona'" :class="{ 'bg-indigo-500': filterOrdering === 'własna strona' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Own Website
-        </button>
-        <button @click="filterOrdering = filterOrdering === 'własna aplikacja' ? '' : 'własna aplikacja'" :class="{ 'bg-indigo-500': filterOrdering === 'własna aplikacja' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Own App
-        </button>
-        <button @click="filterOrdering = filterOrdering === 'pyszne.pl' ? '' : 'pyszne.pl'" :class="{ 'bg-indigo-500': filterOrdering === 'pyszne.pl' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Pyszne.pl
-        </button>
-        <button @click="filterOrdering = filterOrdering === 'glovo' ? '' : 'glovo'" :class="{ 'bg-indigo-500': filterOrdering === 'glovo' }" class="p-2 bg-indigo-300 text-white rounded-lg hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Glovo
-        </button>
-        <button @click="filterOpen = filterOpen === 'open' ? '' : 'open'" :class="{ 'bg-teal-500': filterOpen === 'open' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
-          Open
-        </button>
-        <button @click="filterOpen = filterOpen === 'closed' ? '' : 'closed'" :class="{ 'bg-teal-500': filterOpen === 'closed' }" class="p-2 bg-teal-300 text-white rounded-lg hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500">
-          Closed
-        </button>
-        <input v-model="filterDateTime" type="text" placeholder="Day-HH:MM" class="p-2 bg-emerald-950 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500" />
       </div>
+      <button @click="clearFilters" class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Clear Filters</button>
     </div>
     <TransitionGroup name="list" tag="ul" class="w-full max-w-2xl">
       <li v-for="place in kebabPlaces" :key="place.id" class="flex flex-col mb-2 p-2 border border-gray-300 rounded-lg hover:bg-emerald-900 cursor-pointer" @click="emits('kebabPlaceClick', place)">

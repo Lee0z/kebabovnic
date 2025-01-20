@@ -16,9 +16,9 @@ const isLoggedIn = ref(false);
 const loggedInUserId = ref(null);
 const userName = ref('');
 
-const fetchSearchResults = async () => {
+const fetchSearchResults = async (filters = {}) => {
   try {
-    const data = await get('/kebab-places');
+    const data = await get('/kebab-places', { params: filters });
     searchResults.value = data.data.map(place => new KebabPlace(place));
   } catch (error) {
     console.error('Error fetching search results:', error);
@@ -38,6 +38,7 @@ const closeModal = () => {
 const updateUserName = (name) => {
   userName.value = name;
 };
+
 
 onMounted(() => {
   fetchSearchResults();
@@ -97,5 +98,10 @@ onMounted(() => {
 <style scoped>
 .kebab-list {
   margin-top: 10rem;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 </style>
