@@ -7,7 +7,13 @@
             <LightBulbIcon class="w-6 h-6 text-gray-500 hover:text-gray-300 cursor-pointer" @click="openSuggestionModal" />
             <XMarkIcon class="w-6 h-6 text-gray-500 hover:text-gray-300 cursor-pointer" @click="onRequestClose" />
           </div>
-          <h2 class="text-xl font-bold mb-4">{{ kebabPlace.name }}</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">{{ kebabPlace.name }}</h2>
+            <button v-if="isLoggedIn" @click="toggleFavorite" class="text-red-500 hover:text-red-700">
+              <HeartIcon v-if="isFavorite" class="w-6 h-6" />
+              <HeartIconOutline v-else class="w-6 h-6" />
+            </button>
+          </div>
           <div class="mb-4 flex flex-wrap gap-2">
             <BadgeComponent v-if="kebabPlace.isCraft" text="Craft" color="purple" />
             <BadgeComponent v-if="kebabPlace.isChainRestaurant" text="Chain Restaurant" color="yellow" />
@@ -67,7 +73,7 @@
           </div>
           <div v-if="isLoggedIn" class="mt-4">
             <textarea v-model="newComment" placeholder="Add a comment..." class="w-full p-2 bg-gray-700 text-white rounded-lg"></textarea>
-            <button @click="addComment" class="mt-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Add Comment</button>
+            <button @click="addComment" class="mt-2 p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">Add Comment</button>
           </div>
         </div>
       </div>
@@ -84,15 +90,20 @@ import { get, put, patch, del } from '@/utils/api';
 import Filling from '@/models/FillingModel';
 import Sauce from '@/models/SauceModel';
 import CommentModel from '@/models/CommentModel';
-import { XMarkIcon, LightBulbIcon } from '@heroicons/vue/24/outline'
+import { XMarkIcon, LightBulbIcon } from '@heroicons/vue/24/outline';
+import { HeartIcon as HeartIconOutline } from '@heroicons/vue/24/outline';
+import { HeartIcon } from '@heroicons/vue/24/solid';
 import Cookies from 'universal-cookie';
+import { useToast } from 'vue-toastification';
 
 export default {
   components: {
     BadgeComponent,
     SuggestionAddComponent,
     XMarkIcon,
-    LightBulbIcon
+    LightBulbIcon,
+    HeartIcon,
+    HeartIconOutline
   },
   props: {
     isOpen: {
@@ -118,13 +129,15 @@ export default {
     }
   },
   setup(props) {
-    const cookies = new Cookies()
+    const cookies = new Cookies();
+    const toast = useToast();
     const fillings = ref([]);
     const sauces = ref([]);
     const comments = ref([]);
     const newComment = ref('');
     const editingComment = ref(null);
     const isSuggestionModalOpen = ref(false);
+    const isFavorite = ref(props.kebabPlace ? props.kebabPlace.isFavorite : false);
 
     const openSuggestionModal = () => {
       isSuggestionModalOpen.value = true;
@@ -170,22 +183,15 @@ export default {
     const addComment = async () => {
       if (!newComment.value.trim()) return;
       try {
-        const response = await put(`/kebab-places/${props.kebabPlace.id}/comment`, {
+        const data = await put(`/kebab-places/${props.kebabPlace.id}/comment`, {
           content: newComment.value
         }, {
           headers: {
             Authorization: `Bearer ${cookies.get('auth_token')}`
           }
         });
-        if (response.ok) {
-          const data = await response.json();
-          comments.value.push(new CommentModel(data.comment));
-          newComment.value = '';
-        } else {
-          const errorBody = await response.text();
-          const errorMessage = JSON.parse(errorBody).message || 'Failed to add comment';
-          throw new Error(errorMessage);
-        }
+        comments.value.push(new CommentModel(data.comment));
+        newComment.value = '';
       } catch (error) {
         console.error('Error adding comment:', error);
       }
@@ -199,26 +205,19 @@ export default {
     const updateComment = async () => {
       if (!editingComment.value || !newComment.value.trim()) return;
       try {
-        const response = await patch(`/comment/${editingComment.value.id}`, {
+        const data = await patch(`/comment/${editingComment.value.id}`, {
           content: newComment.value
         }, {
           headers: {
             Authorization: `Bearer ${cookies.get('auth_token')}`
           }
         });
-        if (response.ok) {
-          const data = await response.json();
-          const index = comments.value.findIndex(comment => comment.id === editingComment.value.id);
-          if (index !== -1) {
-            comments.value[index] = new CommentModel(data.comment);
-          }
-          editingComment.value = null;
-          newComment.value = '';
-        } else {
-          const errorBody = await response.text();
-          const errorMessage = JSON.parse(errorBody).message || 'Failed to update comment';
-          throw new Error(errorMessage);
+        const index = comments.value.findIndex(comment => comment.id === editingComment.value.id);
+        if (index !== -1) {
+          comments.value[index] = new CommentModel(data.comment);
         }
+        editingComment.value = null;
+        newComment.value = '';
       } catch (error) {
         console.error('Error updating comment:', error);
       }
@@ -226,20 +225,57 @@ export default {
 
     const deleteComment = async (commentId) => {
       try {
-        const response = await del(`/comment/${commentId}`, {
+        await del(`/comment/${commentId}`, {
           headers: {
             Authorization: `Bearer ${cookies.get('auth_token')}`
           }
         });
-        if (response.ok) {
-          comments.value = comments.value.filter(comment => comment.id !== commentId);
-        } else {
-          const errorBody = await response.text();
-          const errorMessage = JSON.parse(errorBody).message || 'Failed to delete comment';
-          throw new Error(errorMessage);
-        }
+        comments.value = comments.value.filter(comment => comment.id !== commentId);
       } catch (error) {
         console.error('Error deleting comment:', error);
+      }
+    };
+
+    const addFavorite = async (kebabPlaceId) => {
+      try {
+        await put(`/kebab-places/${kebabPlaceId}/fav`, {}, {
+          headers: {
+            'Authorization': `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        isFavorite.value = true;
+        toast.success('Added to favorites');
+      } catch (error) {
+        if (error.response && error.response.status === 409) {
+          isFavorite.value = true;
+          toast.success('Already in favorites');
+        } else {
+          console.error('Error adding favorite:', error);
+          toast.error('Failed to add favorite');
+        }
+      }
+    };
+
+    const removeFavorite = async (kebabPlaceId) => {
+      try {
+        await del(`/kebab-places/${kebabPlaceId}/unfav`, {
+          headers: {
+            'Authorization': `Bearer ${cookies.get('auth_token')}`
+          }
+        });
+        isFavorite.value = false;
+        toast.success('Removed from favorites');
+      } catch (error) {
+        console.error('Error removing favorite:', error);
+        toast.error('Failed to remove favorite');
+      }
+    };
+
+    const toggleFavorite = () => {
+      if (isFavorite.value) {
+        removeFavorite(props.kebabPlace.id);
+      } else {
+        addFavorite(props.kebabPlace.id);
       }
     };
 
@@ -248,6 +284,7 @@ export default {
         fetchFillings();
         fetchSauces();
         fetchComments();
+        isFavorite.value = props.kebabPlace.isFavorite;
       }
     }, { immediate: true });
 
@@ -343,6 +380,8 @@ export default {
       translateDay,
       openSuggestionModal,
       isSuggestionModalOpen,
+      toggleFavorite,
+      isFavorite,
       getSocialIconClass(name) {
         switch (name.toLowerCase()) {
           case 'fb':
@@ -370,6 +409,3 @@ export default {
   opacity: 0;
 }
 </style>
-
-
-
